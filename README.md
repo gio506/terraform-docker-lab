@@ -1,49 +1,54 @@
 # Terraform Docker Lab
 
-This lab is for practicing **Infrastructure as Code (IaC)** on your local machine using Terraform + Docker.
-It helps you learn how to safely provision, verify, and destroy container infrastructure.
+This lab is for practicing **Infrastructure as Code (IaC)** locally with Terraform + Docker.
+It provisions a safe demo environment so you can practice `plan`, `apply`, `verify`, and `destroy` workflows.
 
-This project provisions local Docker infrastructure with Terraform using the `kreuzwerker/docker` provider. It creates:
+## What this provisions
 
-- A dedicated Docker network.
-- A persistent Docker volume.
-- An NGINX container with environment variables and mounted volume.
+- Docker network (`docker_network`)
+- Docker volume (`docker_volume`)
+- NGINX container (`docker_container`) with:
+  - environment variables (`APP_ENV`, `WELCOME_MESSAGE`)
+  - mounted Docker volume at `/usr/share/nginx/html`
+  - host port mapping to container port 80
 
-## What this is for (short)
+## Why this is useful
 
-- Learn Terraform resource lifecycle (`plan`, `apply`, `destroy`) on local Docker.
-- Practice safe CI that checks code quality without auto-applying infra changes.
-- Validate a running service with a simple shell verification script.
+- Hands-on Terraform lifecycle practice on local infra.
+- Safe CI defaults (no automatic apply/destroy on push/PR).
+- Repeatable verification via shell scripts.
 
-## Safety first
+## Safety model
 
-- `terraform apply` is **not** executed automatically by CI on push/PR.
-- Apply and destroy are available only in manual GitHub Actions runs (`workflow_dispatch`) with explicit flags.
-- You should always review `terraform plan` before applying changes.
-
-## Prerequisites
-
-- Docker running locally.
-- Terraform >= 1.5.
-- `curl` for verification script.
-- (Optional) `tflint` for local linting.
+- CI always runs `fmt`, `validate`, `tflint`, and `plan`.
+- `apply` and `destroy` are manual-only (`workflow_dispatch`) and opt-in flags.
+- Manual apply uses a saved plan artifact (`tfplan`) for predictable execution.
 
 ## Repository tree
 
 ```text
 .
-├── .github/workflows/terraform.yml   # CI pipeline: fmt, validate, tflint, plan, manual apply/verify/destroy
-├── .tflint.hcl                       # TFLint configuration (compatible with newer TFLint versions)
-├── main.tf                           # Docker network, volume, image, and container resources
-├── outputs.tf                        # Useful output values (URL, container name, network)
-├── scripts/verify.sh                 # Curl-based runtime verification for deployed container
-├── terraform.tfvars.example          # Example variable values for local overrides
-├── variables.tf                      # Input variables for names, ports, and env values
-├── versions.tf                       # Terraform and provider constraints
-└── CHEATSHEET.md                     # Quick command reference and troubleshooting
+├── .github/workflows/terraform.yml   # CI pipeline (checks + manual apply/destroy)
+├── .tflint.hcl                       # TFLint config (uses call_module_type, not deprecated module)
+├── .gitignore                        # Terraform local/state/plan ignore rules
+├── CHEATSHEET.md                     # Compact command reference
+├── main.tf                           # Docker resources
+├── outputs.tf                        # Output values (URL, names)
+├── scripts/verify.sh                 # Runtime verification via curl
+├── scripts/simulate.sh               # End-to-end local simulation (init->apply->verify->destroy)
+├── terraform.tfvars.example          # Example variable file
+├── variables.tf                      # Input variables
+└── versions.tf                       # Terraform/provider constraints
 ```
 
-## Local usage
+## Prerequisites
+
+- Docker running locally
+- Terraform >= 1.5
+- curl
+- Optional: tflint
+
+## Quick start
 
 ```bash
 cp terraform.tfvars.example terraform.tfvars
@@ -56,34 +61,28 @@ terraform apply
 terraform destroy
 ```
 
-## CI pipeline stages
+## Local simulation (recommended)
 
-1. **fmt**: `terraform fmt -check -recursive`
-2. **validate**: `terraform init -backend=false` + `terraform validate`
-3. **tflint**: static analysis of Terraform files
-4. **plan**: dry-run execution plan
-5. **apply_and_verify** *(manual only)*: apply infrastructure then run `scripts/verify.sh`
-6. **destroy** *(manual only)*: cleanup infrastructure after verification
+Run a full realistic dry run + deploy + verify + cleanup flow:
 
-## Issue seen in CI and how it was solved
+```bash
+./scripts/simulate.sh
+```
 
-**Issue:** TFLint job failed with:
-`module` attribute was removed in v0.54.0. Use `call_module_type` instead.
+Custom port/message:
 
-**Cause:** `.tflint.hcl` used deprecated `config { module = false }`.
+```bash
+./scripts/simulate.sh 8090 "Lab is healthy"
+```
 
-**Fix applied:** Updated config to:
-`config { call_module_type = "none" }`
+## CI issue that was fixed
 
-This makes the pipeline compatible with newer TFLint releases.
+**Issue:** `tflint` failed because `.tflint.hcl` used deprecated `module`.
 
-## Manual workflow usage
+**Fix:** replaced with `call_module_type = "none"` (required for newer TFLint versions).
 
-In GitHub Actions:
+## Official documentation
 
-1. Open **Terraform Docker Lab CI** workflow.
-2. Click **Run workflow**.
-3. Set `run_apply=true` to allow apply.
-4. Optionally set `run_destroy=true` to auto-destroy after verification.
-
-This protects your local and shared environments from accidental auto-apply.
+- Terraform CLI docs: <https://developer.hashicorp.com/terraform/cli>
+- Terraform Docker provider docs: <https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs>
+- TFLint docs: <https://github.com/terraform-linters/tflint>

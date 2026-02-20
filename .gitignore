@@ -1,0 +1,21 @@
+# Terraform working dir and state
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Local variable files (example file is committed)
+terraform.tfvars
+*.auto.tfvars
+
+# Plan files
+*.tfplan
+
+# CLI config
+.terraformrc
+terraform.rc
