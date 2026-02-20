@@ -1,49 +1,58 @@
 # Terraform Docker Lab Cheat Sheet
 
-## Core Terraform commands
-
-- `terraform init` — initialize working directory and download providers.
-- `terraform fmt -recursive` — format Terraform files.
-- `terraform validate` — check syntax and internal consistency.
-- `terraform plan` — preview infrastructure changes safely.
-- `terraform apply` — create/update Docker infrastructure.
-- `terraform destroy` — remove all Terraform-managed resources.
-
-## Useful planning/apply variants
-
-- `terraform plan -out=tfplan` — save plan file for later apply.
-- `terraform apply tfplan` — apply exactly what was planned.
-- `terraform apply -auto-approve` — skip prompt (use carefully).
-- `terraform destroy -auto-approve` — non-interactive cleanup.
-
-## Variable handling
+## Setup
 
 - `cp terraform.tfvars.example terraform.tfvars` — create local variable file.
-- `terraform plan -var='nginx_port=9090'` — quick one-off override.
-- `terraform plan -var-file='terraform.tfvars'` — use explicit variable file.
+- `terraform init` — download provider plugins and initialize.
+- `terraform providers` — show required and installed providers.
 
-## State and outputs
+## Quality checks
 
-- `terraform state list` — list managed resources in state.
-- `terraform output` — show all output values.
-- `terraform output application_url` — show only the app URL output.
+- `terraform fmt -recursive` — format files.
+- `terraform fmt -check -recursive` — check formatting in CI style.
+- `terraform validate` — validate configuration.
+- `tflint --init && tflint` — run Terraform linting rules.
 
-## Verification and debugging
+## Plan / Apply / Destroy
 
-- `./scripts/verify.sh` — check default URL/text.
-- `./scripts/verify.sh http://localhost:8080 "Hello from Terraform Docker Lab"` — custom check.
-- `curl -i http://localhost:8080` — inspect HTTP headers + body.
-- `docker logs lab-nginx` — inspect container logs.
+- `terraform plan` — preview changes.
+- `terraform plan -out=tfplan` — save reviewed plan.
+- `terraform apply tfplan` — apply exactly saved plan.
+- `terraform apply -auto-approve` — apply without prompt (use carefully).
+- `terraform destroy` — destroy managed resources.
+- `terraform destroy -auto-approve` — non-interactive cleanup.
 
-## Docker quick checks
+## Variables
 
-- `docker ps` — confirm container is running.
-- `docker network ls` — confirm network exists.
-- `docker volume ls` — confirm volume exists.
-- `docker inspect lab-nginx` — inspect runtime config/env/ports.
+- `terraform plan -var='nginx_port=9090'` — one-off override.
+- `terraform plan -var='welcome_message=Hi'` — customize web content.
+- `terraform plan -var-file='terraform.tfvars'` — use explicit vars file.
 
-## TFLint and CI notes
+## Outputs and state
 
-- `tflint --init && tflint` — run local linting.
-- If TFLint errors about `module` deprecation, use `call_module_type` in `.tflint.hcl`.
-- CI apply/destroy are manual only through `workflow_dispatch` inputs.
+- `terraform output` — show all outputs.
+- `terraform output application_url` — print app URL.
+- `terraform state list` — list tracked resources.
+- `terraform show` — inspect current state.
+
+## Verify and debug runtime
+
+- `./scripts/verify.sh` — verify default URL and expected text.
+- `./scripts/verify.sh http://localhost:8080 "Hello from Terraform Docker Lab"` — custom verify.
+- `curl -i http://localhost:8080` — inspect HTTP response.
+- `docker ps` — check running container.
+- `docker logs lab-nginx` — inspect startup/runtime logs.
+- `docker inspect lab-nginx` — check env, ports, and mounts.
+- `docker network ls` — verify network creation.
+- `docker volume ls` — verify volume creation.
+
+## Full simulation
+
+- `./scripts/simulate.sh` — full local flow (init, fmt-check, validate, plan, apply, verify, destroy).
+- `./scripts/simulate.sh 8090 "Lab OK"` — simulation with custom port/message.
+
+## CI behavior
+
+- Push/PR: `fmt` → `validate` → `tflint` → `plan`.
+- Manual (`workflow_dispatch`): optional `apply_and_verify`, optional `destroy`.
+- Safety default: no auto-apply on push/PR.
