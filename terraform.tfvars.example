@@ -1,0 +1,5 @@
+project_name    = "terraform-docker-lab"
+container_name  = "lab-nginx"
+nginx_port      = 8080
+welcome_message = "Hello from Terraform Docker Lab"
+app_environment = "local-dev"
