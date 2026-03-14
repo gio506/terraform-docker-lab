@@ -48,6 +48,7 @@ resource "docker_container" "web" {
   }
 
   ports {
+    ip       = "127.0.0.1"
     internal = 80
     external = var.nginx_port
   }

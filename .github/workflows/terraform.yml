@@ -25,8 +25,36 @@ env:
   TF_INPUT: "false"
 
 jobs:
-  fmt:
+  structure-check:
+    name: Stage 1 - Structure check
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify required files
+        shell: bash
+        run: |
+          required_files=(
+            "README.md"
+            "CHEATSHEET.md"
+            "FILES_EXPLAINED.md"
+            "main.tf"
+            "variables.tf"
+            "outputs.tf"
+            "versions.tf"
+            "scripts/verify.sh"
+            "scripts/simulate.sh"
+          )
+          for file in "${required_files[@]}"; do
+            test -f "$file" || {
+              echo "Missing required file: $file"
+              exit 1
+            }
+          done
+
+  fmt:
+    name: Stage 2 - Terraform fmt
+    runs-on: ubuntu-latest
+    needs: structure-check
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
@@ -34,6 +62,7 @@ jobs:
         run: terraform fmt -check -recursive
 
   validate:
+    name: Stage 3 - Terraform validate
     runs-on: ubuntu-latest
     needs: fmt
     steps:
@@ -45,6 +74,7 @@ jobs:
         run: terraform validate
 
   tflint:
+    name: Stage 4 - TFLint
     runs-on: ubuntu-latest
     needs: validate
     steps:
@@ -54,6 +84,7 @@ jobs:
         run: tflint --init && tflint
 
   plan:
+    name: Stage 5 - Terraform plan
     runs-on: ubuntu-latest
     needs: tflint
     steps:
@@ -70,6 +101,7 @@ jobs:
           path: tfplan
 
   apply_and_verify:
+    name: Stage 6 - Apply and verify
     if: github.event_name == 'workflow_dispatch' && inputs.run_apply == true
     runs-on: ubuntu-latest
     needs: plan
@@ -88,6 +120,7 @@ jobs:
         run: ./scripts/verify.sh
 
   destroy:
+    name: Stage 7 - Destroy
     if: github.event_name == 'workflow_dispatch' && inputs.run_apply == true && inputs.run_destroy == true
     runs-on: ubuntu-latest
     needs: apply_and_verify
