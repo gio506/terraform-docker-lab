@@ -2,7 +2,7 @@ name: Terraform Docker Lab CI
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "dev"]
   pull_request:
   workflow_dispatch:
     inputs:
