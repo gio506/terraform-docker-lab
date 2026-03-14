@@ -11,13 +11,30 @@ resource "docker_image" "nginx" {
   keep_locally = true
 }
 
+resource "docker_image" "redis" {
+  name         = "redis:7.4-alpine"
+  keep_locally = true
+}
+
+resource "docker_container" "redis" {
+  name  = var.redis_container_name
+  image = docker_image.redis.image_id
+
+  networks_advanced {
+    name = docker_network.lab.name
+  }
+
+  restart = "unless-stopped"
+}
+
 resource "docker_container" "web" {
   name  = var.container_name
   image = docker_image.nginx.image_id
 
   env = [
     "APP_ENV=${var.app_environment}",
-    "WELCOME_MESSAGE=${var.welcome_message}"
+    "WELCOME_MESSAGE=${var.welcome_message}",
+    "CACHE_HOST=${var.redis_container_name}"
   ]
 
   networks_advanced {
@@ -42,4 +59,8 @@ resource "docker_container" "web" {
   ]
 
   restart = "unless-stopped"
+
+  depends_on = [
+    docker_container.redis
+  ]
 }

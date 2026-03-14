@@ -10,6 +10,12 @@ variable "container_name" {
   default     = "lab-nginx"
 }
 
+variable "redis_container_name" {
+  description = "Name of the Redis sidecar container."
+  type        = string
+  default     = "lab-redis"
+}
+
 variable "nginx_port" {
   description = "Host port mapped to container port 80."
   type        = number

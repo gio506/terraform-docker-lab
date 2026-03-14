@@ -42,4 +42,7 @@ terraform apply -auto-approve simulation.tfplan
 echo "[6/7] verify endpoint"
 ./scripts/verify.sh "http://localhost:${PORT}" "${MESSAGE}"
 
+echo "[info] verifying Redis sidecar exists"
+docker ps --format '{{.Names}}' | grep -q "$(terraform output -raw redis_container_name)"
+
 echo "[7/7] simulation completed successfully"

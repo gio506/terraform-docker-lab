@@ -11,6 +11,7 @@ It provisions a safe demo environment so you can practice `plan`, `apply`, `veri
   - environment variables (`APP_ENV`, `WELCOME_MESSAGE`)
   - mounted Docker volume at `/usr/share/nginx/html`
   - host port mapping to container port 80
+- Redis sidecar container on the same Docker network
 
 ## Why this is useful
 
@@ -32,6 +33,8 @@ It provisions a safe demo environment so you can practice `plan`, `apply`, `veri
 ├── .tflint.hcl                       # TFLint config (uses call_module_type, not deprecated module)
 ├── .gitignore                        # Terraform local/state/plan ignore rules
 ├── CHEATSHEET.md                     # Compact command reference
+├── FILES_EXPLAINED.md                # File-by-file purpose map
+├── Makefile                          # Convenience targets for local Terraform workflows
 ├── main.tf                           # Docker resources
 ├── outputs.tf                        # Output values (URL, names)
 ├── scripts/verify.sh                 # Runtime verification via curl
@@ -53,12 +56,12 @@ It provisions a safe demo environment so you can practice `plan`, `apply`, `veri
 ```bash
 cp terraform.tfvars.example terraform.tfvars
 terraform init
-terraform fmt -recursive
-terraform validate
-terraform plan
-terraform apply
+make fmt
+make validate
+make plan
+make apply
 ./scripts/verify.sh http://localhost:8080 "Hello from Terraform Docker Lab"
-terraform destroy
+make destroy
 ```
 
 ## Local simulation (recommended)
